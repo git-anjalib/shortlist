@@ -11,14 +11,22 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  APPLICATIONS_STORAGE_KEY,
+  createApplication,
+  deleteApplication,
+  importLegacyApplications,
+  updateApplicationStage,
+} from "@/app/applications/actions";
+import {
   APPLICATION_STAGE_OPTIONS,
+  isApplicationDate,
   isApplicationStage,
   isHttpUrl,
-  loadApplications,
-  saveApplications,
   type ApplicationStage,
   type JobApplication,
+} from "@/lib/application-domain";
+import {
+  clearLegacyApplications,
+  loadLegacyApplications,
 } from "@/lib/application-storage";
 
 const stageStyles: Record<ApplicationStage, string> = {
@@ -39,6 +47,11 @@ const primaryButtonClassName =
 const secondaryButtonClassName =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
 
+type ApplicationTrackerProps = {
+  initialApplications: JobApplication[];
+  initialLoadError: string | null;
+};
+
 function sortApplications(applications: JobApplication[]): JobApplication[] {
   return [...applications].sort((left, right) =>
     right.updatedAt.localeCompare(left.updatedAt),
@@ -52,80 +65,42 @@ function formatDate(value: string): string {
   );
 }
 
-export function ApplicationTracker() {
-  const [applications, setApplications] = useState<JobApplication[]>([]);
-  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
-    "loading",
+export function ApplicationTracker({
+  initialApplications,
+  initialLoadError,
+}: ApplicationTrackerProps) {
+  const [applications, setApplications] = useState(() =>
+    sortApplications(initialApplications),
   );
-  const [storageError, setStorageError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(initialLoadError);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [legacyApplications, setLegacyApplications] = useState<JobApplication[]>(
+    [],
+  );
+  const [legacyDismissed, setLegacyDismissed] = useState(false);
+  const [isWorking, setIsWorking] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
+    setApplications(sortApplications(initialApplications));
+    setLoadError(initialLoadError);
+  }, [initialApplications, initialLoadError]);
+
+  useEffect(() => {
     try {
-      setApplications(sortApplications(loadApplications()));
-      setLoadState("ready");
+      setLegacyApplications(loadLegacyApplications());
     } catch {
-      setStorageError(
-        "Shortlist couldn't read saved application data. Your records have been left untouched.",
+      setActionError(
+        "Shortlist couldn't read applications saved by the earlier browser-only version. Those records have been left untouched.",
       );
-      setLoadState("error");
     }
   }, []);
 
-  useEffect(() => {
-    if (loadState !== "ready") {
-      return;
-    }
+  const isReady = loadError === null;
 
-    function handleStorageChange(event: StorageEvent) {
-      if (
-        event.key !== APPLICATIONS_STORAGE_KEY &&
-        event.key !== null
-      ) {
-        return;
-      }
-
-      try {
-        setApplications(sortApplications(loadApplications()));
-        setStorageError(null);
-        setFeedback("Applications updated from another browser tab.");
-        setLoadState("ready");
-      } catch {
-        setStorageError(
-          "Shortlist couldn't read saved application data. Your records have been left untouched.",
-        );
-        setLoadState("error");
-      }
-    }
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [loadState]);
-
-  function persistChanges(
-    nextApplications: JobApplication[],
-    successMessage: string,
-  ): boolean {
-    try {
-      saveApplications(nextApplications);
-      setApplications(sortApplications(nextApplications));
-      setStorageError(null);
-      setFeedback(successMessage);
-      setLoadState("ready");
-      return true;
-    } catch {
-      setStorageError(
-        "Shortlist couldn't save changes. Check that browser storage is available and has space.",
-      );
-      setLoadState("error");
-      setFeedback("");
-      return false;
-    }
-  }
-
-  function handleAddApplication(event: FormEvent<HTMLFormElement>) {
+  async function handleAddApplication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -135,12 +110,12 @@ export function ApplicationTracker() {
     const stageValue = formData.get("stage");
     const appliedAtValue = String(formData.get("appliedAt") ?? "");
 
-    if (!company || !role) {
-      setFormError("Add both a company and a role.");
+    if (!company || company.length > 120 || !role || role.length > 160) {
+      setFormError("Add a company and role within the field limits.");
       return;
     }
 
-    if (jobUrlValue && !isHttpUrl(jobUrlValue)) {
+    if (jobUrlValue && (jobUrlValue.length > 2048 || !isHttpUrl(jobUrlValue))) {
       setFormError("Use a complete job URL that starts with http:// or https://.");
       return;
     }
@@ -150,73 +125,150 @@ export function ApplicationTracker() {
       return;
     }
 
-    if (
-      appliedAtValue &&
-      !/^\d{4}-\d{2}-\d{2}$/.test(appliedAtValue)
-    ) {
+    if (appliedAtValue && !isApplicationDate(appliedAtValue)) {
       setFormError("Choose a valid application date.");
       return;
     }
 
-    const now = new Date().toISOString();
-    const application: JobApplication = {
-      id: crypto.randomUUID(),
-      company,
-      role,
-      stage: stageValue,
-      jobUrl: jobUrlValue || null,
-      appliedAt: appliedAtValue || null,
-      createdAt: now,
-      updatedAt: now,
-    };
+    setFormError(null);
+    setActionError(null);
+    setIsWorking(true);
 
-    if (
-      persistChanges(
-        [...applications, application],
-        "Application added and saved in this browser.",
-      )
-    ) {
+    try {
+      const result = await createApplication({
+        company,
+        role,
+        stage: stageValue,
+        jobUrl: jobUrlValue || null,
+        appliedAt: appliedAtValue || null,
+      });
+
+      if (!result.ok) {
+        setFormError(result.error);
+        return;
+      }
+
+      setApplications((current) =>
+        sortApplications([...current, result.data]),
+      );
+      setFeedback("Application saved to your account.");
       form.reset();
-      setFormError(null);
       setIsFormOpen(false);
+    } catch {
+      setFormError("Shortlist couldn't reach the database. Try again.");
+    } finally {
+      setIsWorking(false);
     }
   }
 
-  function handleStageChange(
+  async function handleStageChange(
     application: JobApplication,
     stageValue: string,
   ) {
-    if (!isApplicationStage(stageValue)) {
+    if (!isApplicationStage(stageValue) || isWorking) {
       return;
     }
 
-    const updatedAt = new Date().toISOString();
-    const nextApplications = applications.map((item) =>
-      item.id === application.id
-        ? { ...item, stage: stageValue, updatedAt }
-        : item,
-    );
+    setActionError(null);
+    setFeedback("");
+    setIsWorking(true);
 
-    persistChanges(
-      nextApplications,
-      "Application stage updated and saved.",
-    );
+    try {
+      const result = await updateApplicationStage(application.id, stageValue);
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+
+      setApplications((current) =>
+        sortApplications(
+          current.map((item) =>
+            item.id === result.data.id ? result.data : item,
+          ),
+        ),
+      );
+      setFeedback("Application stage updated.");
+    } catch {
+      setActionError("Shortlist couldn't reach the database. Try again.");
+    } finally {
+      setIsWorking(false);
+    }
   }
 
-  function handleRemove(application: JobApplication) {
-    const shouldRemove = window.confirm(
-      "Remove " + application.role + " at " + application.company + "?",
-    );
+  async function handleRemove(application: JobApplication) {
+    if (isWorking) {
+      return;
+    }
 
+    const shouldRemove = window.confirm(
+      `Remove ${application.role} at ${application.company}?`,
+    );
     if (!shouldRemove) {
       return;
     }
 
-    const nextApplications = applications.filter(
-      (item) => item.id !== application.id,
-    );
+    setActionError(null);
+    setFeedback("");
+    setIsWorking(true);
 
-    persistChanges(nextApplications, "Application removed.");
+    try {
+      const result = await deleteApplication(application.id);
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+
+      setApplications((current) =>
+        current.filter((item) => item.id !== result.data),
+      );
+      setFeedback("Application removed from your account.");
+    } catch {
+      setActionError("Shortlist couldn't reach the database. Try again.");
+    } finally {
+      setIsWorking(false);
+    }
+  }
+
+  async function handleImportLegacyApplications() {
+    if (isWorking || legacyApplications.length === 0) {
+      return;
+    }
+
+    setActionError(null);
+    setFeedback("");
+    setIsWorking(true);
+
+    try {
+      const result = await importLegacyApplications(legacyApplications);
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+
+      setApplications((current) => {
+        const knownIds = new Set(current.map((application) => application.id));
+        return sortApplications([
+          ...current,
+          ...result.data.filter((application) => !knownIds.has(application.id)),
+        ]);
+      });
+      setLegacyApplications([]);
+      setLegacyDismissed(true);
+      try {
+        clearLegacyApplications();
+        setFeedback("Your earlier applications are now saved to your account.");
+      } catch {
+        setActionError(
+          "The import succeeded, but this browser couldn't clear its old copy. Your account data is saved; the browser copy may appear again after refresh.",
+        );
+      }
+    } catch {
+      setActionError(
+        "Shortlist couldn't reach the database. Your browser-saved applications are still here; try the import again.",
+      );
+    } finally {
+      setIsWorking(false);
+    }
   }
 
   const activeCount = applications.filter(
@@ -272,7 +324,7 @@ export function ApplicationTracker() {
             </p>
           </div>
           <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[0.65rem] font-medium text-muted-foreground">
-            SAVED IN THIS BROWSER
+            SAVED TO YOUR ACCOUNT
           </span>
         </div>
 
@@ -294,7 +346,7 @@ export function ApplicationTracker() {
                   </span>
                 </div>
                 <p className="mt-4 text-3xl font-semibold tracking-tight">
-                  {loadState === "ready" ? metric.value : "—"}
+                  {isReady ? metric.value : "—"}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {metric.detail}
@@ -322,7 +374,7 @@ export function ApplicationTracker() {
           <button
             type="button"
             className={primaryButtonClassName}
-            disabled={loadState !== "ready"}
+            disabled={!isReady || isWorking}
             aria-expanded={isFormOpen}
             onClick={() => {
               setFormError(null);
@@ -343,19 +395,56 @@ export function ApplicationTracker() {
             {feedback}
           </p>
 
-          {storageError && (
+          {loadError && (
             <p
               className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
               role="alert"
             >
-              {storageError}
+              {loadError}
             </p>
+          )}
+          {actionError && (
+            <p
+              className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              role="alert"
+            >
+              {actionError}
+            </p>
+          )}
+
+          {legacyApplications.length > 0 && !legacyDismissed && (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <h3 className="text-sm font-semibold">
+                Import your earlier applications
+              </h3>
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                Shortlist found {legacyApplications.length} {legacyApplications.length === 1 ? "application" : "applications"} saved in this browser. Import them to your account; the local copy is removed only after a successful import.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className={primaryButtonClassName}
+                  onClick={handleImportLegacyApplications}
+                  disabled={!isReady || isWorking}
+                >
+                  {isWorking ? "Importing…" : "Import applications"}
+                </button>
+                <button
+                  type="button"
+                  className={secondaryButtonClassName}
+                  onClick={() => setLegacyDismissed(true)}
+                  disabled={isWorking}
+                >
+                  Later
+                </button>
+              </div>
+            </div>
           )}
 
           {isFormOpen && (
             <form
               id="new-application-form"
-              className="mb-5 rounded-xl border border-border bg-muted/30 p-4 sm:p-5"
+              className="mb-5 mt-4 rounded-xl border border-border bg-muted/30 p-4 sm:p-5"
               onSubmit={handleAddApplication}
             >
               <div className="mb-4">
@@ -436,23 +525,24 @@ export function ApplicationTracker() {
                     setFormError(null);
                     setIsFormOpen(false);
                   }}
+                  disabled={isWorking}
                 >
                   Cancel
                 </button>
-                <button type="submit" className={primaryButtonClassName}>
-                  Save application
+                <button
+                  type="submit"
+                  className={primaryButtonClassName}
+                  disabled={isWorking}
+                >
+                  {isWorking ? "Saving…" : "Save application"}
                 </button>
               </div>
             </form>
           )}
 
-          {loadState === "loading" ? (
+          {!isReady ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Loading saved applications…
-            </p>
-          ) : loadState === "error" ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Your saved list is unavailable until browser storage can be read.
+              Your account applications are unavailable until the database connection is fixed.
             </p>
           ) : applications.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border px-5 py-10 text-center">
@@ -468,6 +558,7 @@ export function ApplicationTracker() {
                 type="button"
                 className={secondaryButtonClassName + " mt-4"}
                 onClick={() => setIsFormOpen(true)}
+                disabled={isWorking}
               >
                 <Plus aria-hidden="true" className="size-4" />
                 Add your first application
@@ -476,80 +567,73 @@ export function ApplicationTracker() {
           ) : (
             <ul className="divide-y divide-border">
               {applications.map((application) => (
-                  <li
-                    key={application.id}
-                    className="flex flex-col gap-4 py-4 first:pt-1 last:pb-1 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <h3 className="truncate font-medium">{application.role}</h3>
-                      <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                        {application.company}
-                      </p>
-                      <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <CalendarDays aria-hidden="true" className="size-3.5" />
-                        {application.appliedAt
-                          ? "Applied " + formatDate(application.appliedAt)
-                          : "Added " +
-                            formatDate(application.createdAt.slice(0, 10))}
-                      </p>
-                    </div>
+                <li
+                  key={application.id}
+                  className="flex flex-col gap-4 py-4 first:pt-1 last:pb-1 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <h3 className="truncate font-medium">{application.role}</h3>
+                    <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                      {application.company}
+                    </p>
+                    <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <CalendarDays aria-hidden="true" className="size-3.5" />
+                      {application.appliedAt
+                        ? "Applied " + formatDate(application.appliedAt)
+                        : "Added " + formatDate(application.createdAt.slice(0, 10))}
+                    </p>
+                  </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <label
-                        className="sr-only"
-                        htmlFor={"stage-" + application.id}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label
+                      className="sr-only"
+                      htmlFor={"stage-" + application.id}
+                    >
+                      Stage for {application.role} at {application.company}
+                    </label>
+                    <select
+                      id={"stage-" + application.id}
+                      className={
+                        "min-h-9 rounded-lg border border-input px-2.5 py-1.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+                        stageStyles[application.stage]
+                      }
+                      value={application.stage}
+                      onChange={(event) =>
+                        handleStageChange(application, event.target.value)
+                      }
+                      disabled={isWorking}
+                    >
+                      {APPLICATION_STAGE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {application.jobUrl && (
+                      <a
+                        href={application.jobUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        Stage for {application.role} at {application.company}
-                      </label>
-                      <select
-                        id={"stage-" + application.id}
-                        className={
-                          "min-h-9 rounded-lg border border-input px-2.5 py-1.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
-                          stageStyles[application.stage]
-                        }
-                        value={application.stage}
-                        onChange={(event) =>
-                          handleStageChange(application, event.target.value)
-                        }
-                        disabled={loadState !== "ready"}
-                      >
-                        {APPLICATION_STAGE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      {application.jobUrl && (
-                        <a
-                          href={application.jobUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          Job post
-                          <ArrowUpRight
-                            aria-hidden="true"
-                            className="size-3.5"
-                          />
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-                        aria-label={
-                          "Remove " +
-                          application.role +
-                          " at " +
-                          application.company
-                        }
-                        onClick={() => handleRemove(application)}
-                        disabled={loadState !== "ready"}
-                      >
-                        <Trash2 aria-hidden="true" className="size-3.5" />
-                        Remove
-                      </button>
-                    </div>
-                  </li>
+                        Job post
+                        <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+                      aria-label={
+                        "Remove " + application.role + " at " + application.company
+                      }
+                      onClick={() => handleRemove(application)}
+                      disabled={isWorking}
+                    >
+                      <Trash2 aria-hidden="true" className="size-3.5" />
+                      Remove
+                    </button>
+                  </div>
+                </li>
               ))}
             </ul>
           )}

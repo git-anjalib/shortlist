@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -10,11 +12,77 @@ import {
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ApplicationTracker } from "@/components/application-tracker";
+import type { JobApplication } from "@/lib/application-domain";
+import { getSupabasePublicConfig } from "@/lib/supabase/config";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default function HomePage() {
+  if (!getSupabasePublicConfig()) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 text-foreground">
+        <section className="max-w-lg rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+          <h1 className="text-xl font-semibold">Connect your Shortlist database</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Add the Supabase URL and publishable key to
+            <code className="mx-1 rounded bg-muted px-1 py-0.5">apps/web/.env.local</code>
+            and run the setup steps in
+            <code className="mx-1 rounded bg-muted px-1 py-0.5">apps/web/SUPABASE_SETUP.md</code>.
+          </p>
+          <a
+            href="/login"
+            className="mt-5 inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Account setup
+          </a>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <Suspense
+      fallback={
+        <main className="grid min-h-screen place-items-center bg-muted/30 text-sm text-muted-foreground">
+          Loading your workspace…
+        </main>
+      }
+    >
+      <AuthenticatedHomePage />
+    </Suspense>
+  );
+}
+
+async function AuthenticatedHomePage() {
+  const supabase = await createSupabaseServerClient();
+  const { data: authData, error: authError } = await supabase.auth.getClaims();
+
+  if (authError || !authData?.claims?.sub) {
+    redirect("/login");
+  }
+
+  const { data: rows, error: applicationsError } = await supabase
+    .from("job_applications")
+    .select("id, company, role, stage, job_url, applied_at, created_at, updated_at")
+    .order("updated_at", { ascending: false });
+
+  const initialApplications: JobApplication[] = (rows ?? []).map((row) => ({
+      id: row.id,
+      company: row.company,
+      role: row.role,
+      stage: row.stage,
+      jobUrl: row.job_url,
+      appliedAt: row.applied_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  const email =
+    typeof authData.claims.email === "string"
+      ? authData.claims.email
+      : "Signed in";
+
   return (
     <div className="min-h-screen bg-muted/30 text-foreground md:flex">
-      <AppSidebar />
+      <AppSidebar email={email} />
 
       <main id="overview" className="min-w-0 flex-1">
         <header className="border-b border-border bg-background px-5 py-6 sm:px-8 sm:py-8 lg:px-10">
@@ -51,7 +119,14 @@ export default function HomePage() {
         </header>
 
         <div className="mx-auto max-w-7xl space-y-6 p-5 sm:p-8 lg:p-10">
-          <ApplicationTracker />
+          <ApplicationTracker
+            initialApplications={initialApplications}
+            initialLoadError={
+              applicationsError
+                ? "Shortlist couldn't load your applications. Check the database setup and try again."
+                : null
+            }
+          />
 
           <div className="grid gap-5 xl:grid-cols-2">
             <section
@@ -226,7 +301,7 @@ export default function HomePage() {
           </div>
 
           <p className="pb-2 text-center text-xs text-muted-foreground">
-            Applications are saved in this browser. Resume review and job
+            Applications are saved to your account. Resume review and job
             discovery are previews and are not connected yet.
           </p>
         </div>

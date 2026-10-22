@@ -2,9 +2,11 @@ import {
   Briefcase,
   FileText,
   LayoutDashboard,
+  LogOut,
   Search,
   Settings,
 } from "lucide-react";
+import { signOutAction } from "@/app/auth/actions";
 
 const navigation = [
   { label: "Overview", href: "#overview", icon: LayoutDashboard },
@@ -13,7 +15,9 @@ const navigation = [
   { label: "Resume coach", href: "#resume-review", icon: FileText },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ email }: { email: string }) {
+  const initials = email.slice(0, 1).toUpperCase() || "U";
+
   return (
     <>
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-5 text-sidebar-foreground md:flex">
@@ -89,12 +93,22 @@ export function AppSidebar() {
               aria-hidden="true"
               className="grid size-9 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground"
             >
-              ?
+              {initials}
             </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium">Your profile</span>
-              <span className="block text-xs text-muted-foreground">Setup comes next</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs text-muted-foreground">Signed in</span>
+              <span className="block truncate text-sm font-medium">{email}</span>
             </span>
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut aria-hidden="true" className="size-4" />
+              </button>
+            </form>
           </div>
         </div>
       </aside>
@@ -113,9 +127,24 @@ export function AppSidebar() {
             </span>
             shortlist
           </a>
-          <span className="grid size-8 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
-            ?
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              aria-label={email}
+              className="grid size-8 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground"
+            >
+              {initials}
+            </span>
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut aria-hidden="true" className="size-4" />
+              </button>
+            </form>
+          </div>
         </div>
         <nav aria-label="Workspace navigation" className="overflow-x-auto px-3 pb-2">
           <ul className="flex min-w-max items-center gap-1">
