@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Shortlist",
+  title: "Shortlist | Job search workspace",
   description:
-    "An AI-powered job search, matching, and interview preparation platform.",
+    "A workspace to organize job applications, discover relevant roles, and tailor your resume to each opportunity.",
 };
 
 export default function RootLayout({

@@ -1,20 +1,236 @@
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  FileText,
+  Search,
+  Settings,
+  Sparkles,
+  Target,
+} from "lucide-react";
+import { AppSidebar } from "@/components/app-sidebar";
+import { ApplicationTracker } from "@/components/application-tracker";
+
 export default function HomePage() {
   return (
-    <main className="flex min-h-full flex-1 items-center justify-center p-6">
-      <div className="w-full max-w-2xl space-y-4 text-center">
-        <p className="text-sm font-medium text-muted-foreground">
-          AI-powered job search
-        </p>
+    <div className="min-h-screen bg-muted/30 text-foreground md:flex">
+      <AppSidebar />
 
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-          Find jobs worth applying to.
-        </h1>
+      <main id="overview" className="min-w-0 flex-1">
+        <header className="border-b border-border bg-background px-5 py-6 sm:px-8 sm:py-8 lg:px-10">
+          <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Your workspace
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                Keep your job search organized.
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Track opportunities, see what needs attention, and plan your
+                next step.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href="#applications"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <FileText aria-hidden="true" className="size-4" />
+                View applications
+              </a>
+              <a
+                href="#job-matches"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <Search aria-hidden="true" className="size-4" />
+                Explore job discovery
+              </a>
+            </div>
+          </div>
+        </header>
 
-        <p className="mx-auto max-w-xl text-muted-foreground">
-          Shortlist helps you discover relevant opportunities, understand your
-          match, and prepare for the interview.
-        </p>
-      </div>
-    </main>
+        <div className="mx-auto max-w-7xl space-y-6 p-5 sm:p-8 lg:p-10">
+          <ApplicationTracker />
+
+          <div className="grid gap-5 xl:grid-cols-2">
+            <section
+              id="resume-review"
+              aria-labelledby="resume-title"
+              className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                  <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+                    <Sparkles aria-hidden="true" className="size-4" />
+                  </span>
+                  Resume coach
+                </span>
+                <span className="rounded-full bg-secondary px-2.5 py-1 text-[0.65rem] font-medium text-secondary-foreground">
+                  PREVIEW
+                </span>
+              </div>
+              <h2
+                id="resume-title"
+                className="mt-5 text-xl font-semibold tracking-tight"
+              >
+                Tailor your resume to a role.
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Compare a resume with a job description and get focused,
+                editable suggestions before you apply.
+              </p>
+
+              <div className="mt-5 space-y-3 rounded-xl bg-muted/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  A focused review checks
+                </p>
+                <p className="flex items-center gap-2 text-sm">
+                  <Check aria-hidden="true" className="size-4 text-primary" />
+                  Skills and role alignment
+                </p>
+                <p className="flex items-center gap-2 text-sm">
+                  <Check aria-hidden="true" className="size-4 text-primary" />
+                  Clear, specific impact statements
+                </p>
+                <p className="flex items-center gap-2 text-sm">
+                  <Check aria-hidden="true" className="size-4 text-primary" />
+                  Suggestions you control
+                </p>
+              </div>
+
+              <a
+                href="#resume-review-steps"
+                className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                See how a review will work
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </a>
+            </section>
+
+            <section
+              id="job-matches"
+              aria-labelledby="matches-title"
+              className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6"
+            >
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <Target aria-hidden="true" className="size-4" />
+                Job discovery
+              </div>
+              <h2
+                id="matches-title"
+                className="mt-2 text-xl font-semibold tracking-tight"
+              >
+                Find roles that fit your search.
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Job matches will use your target roles, location, and work
+                preferences. No external job source is connected yet.
+              </p>
+
+              <div className="mt-5 flex items-start gap-3 rounded-xl border border-dashed border-border bg-background p-4">
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                  <Search aria-hidden="true" className="size-4" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-semibold">
+                    Job matching is the next layer
+                  </h3>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Set your search criteria first. Matching roles can then be
+                    saved to this application tracker.
+                  </p>
+                  <a
+                    href="#profile-criteria"
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    See criteria setup
+                    <ArrowUpRight aria-hidden="true" className="size-4" />
+                  </a>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <section
+              id="profile-criteria"
+              aria-labelledby="criteria-title"
+              className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6"
+            >
+              <div className="flex items-start gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+                  <Settings aria-hidden="true" className="size-4" />
+                </span>
+                <div>
+                  <h2 id="criteria-title" className="font-semibold">
+                    Search criteria
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Criteria setup follows the application tracker. It will
+                    capture the roles, locations, and work styles you want.
+                  </p>
+                </div>
+              </div>
+              <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+                {[
+                  "Target roles",
+                  "Location and commute",
+                  "Remote or hybrid preference",
+                  "Skills and must-haves",
+                ].map((criterion) => (
+                  <li
+                    key={criterion}
+                    className="rounded-lg border border-dashed border-border px-3 py-2.5 text-xs text-muted-foreground"
+                  >
+                    {criterion} · Not set up
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section
+              id="resume-review-steps"
+              aria-labelledby="review-steps-title"
+              className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6"
+            >
+              <div className="flex items-start gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+                  <FileText aria-hidden="true" className="size-4" />
+                </span>
+                <div>
+                  <h2 id="review-steps-title" className="font-semibold">
+                    A resume review, step by step
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Suggestions will stay tied to a specific role and remain
+                    under your control.
+                  </p>
+                </div>
+              </div>
+              <ol className="mt-5 grid gap-3 sm:grid-cols-3">
+                {[
+                  "Choose a resume",
+                  "Add the job description",
+                  "Review suggested edits",
+                ].map((step, index) => (
+                  <li key={step} className="flex items-start gap-2.5 text-sm">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                      {index + 1}
+                    </span>
+                    <span className="pt-0.5 leading-5">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          </div>
+
+          <p className="pb-2 text-center text-xs text-muted-foreground">
+            Applications are saved in this browser. Resume review and job
+            discovery are previews and are not connected yet.
+          </p>
+        </div>
+      </main>
+    </div>
   );
 }
