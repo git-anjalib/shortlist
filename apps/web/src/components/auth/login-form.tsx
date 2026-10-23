@@ -10,7 +10,11 @@ const fieldClassName =
 const buttonClassName =
   "inline-flex min-h-11 w-full items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
 
-const initialState: AuthActionState = { error: null, message: null };
+const initialState: AuthActionState = {
+  error: null,
+  message: null,
+  canResendConfirmation: false,
+};
 
 export function LoginForm({ configured }: { configured: boolean }) {
   const searchParams = useSearchParams();
@@ -18,6 +22,9 @@ export function LoginForm({ configured }: { configured: boolean }) {
     authenticate,
     initialState,
   );
+  const canResendConfirmation =
+    state.canResendConfirmation ||
+    searchParams.get("notice") === "confirmation-error";
 
   return (
     <form action={formAction} className="space-y-4">
@@ -89,6 +96,19 @@ export function LoginForm({ configured }: { configured: boolean }) {
           Create account
         </button>
       </div>
+
+      {canResendConfirmation && (
+        <button
+          className={buttonClassName + " border border-border bg-background hover:bg-muted"}
+          type="submit"
+          name="intent"
+          value="resend-confirmation"
+          formNoValidate
+          disabled={!configured || isPending}
+        >
+          Resend confirmation email
+        </button>
+      )}
 
       <p className="text-xs leading-5 text-muted-foreground">
         Your saved applications are private to your account. You can use the
