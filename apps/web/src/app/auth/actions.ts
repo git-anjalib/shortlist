@@ -1,6 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import {
+  validateAuthCredentials,
+  type AuthFieldErrors,
+  type AuthIntent,
+} from "@/lib/auth-validation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthActionState = {
@@ -8,8 +13,6 @@ export type AuthActionState = {
   message: string | null;
   canResendConfirmation?: boolean;
 };
-
-type AuthIntent = "sign-in" | "sign-up" | "resend-confirmation";
 
 type AuthErrorDetails = {
   code?: string;
@@ -74,27 +77,30 @@ export async function authenticate(
   _previousState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
-  const intent = formData.get("intent");
+  const intentValue = formData.get("intent");
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
 
   if (
-    intent !== "sign-in" &&
-    intent !== "sign-up" &&
-    intent !== "resend-confirmation"
+    intentValue !== "sign-in" &&
+    intentValue !== "sign-up" &&
+    intentValue !== "resend-confirmation"
   ) {
     return { error: "Choose sign in or create account.", message: null };
   }
 
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Enter a valid email address.", message: null };
-  }
+  const intent: AuthIntent = intentValue;
+  const fieldErrors: AuthFieldErrors = validateAuthCredentials({
+    email,
+    password,
+    intent,
+  });
 
-  if (
-    intent !== "resend-confirmation" &&
-    (password.length < 8 || password.length > 128)
-  ) {
-    return { error: "Use a password with at least 8 characters.", message: null };
+  if (fieldErrors.email || fieldErrors.password) {
+    return {
+      error: fieldErrors.email ?? fieldErrors.password ?? "Check your details and try again.",
+      message: null,
+    };
   }
 
   let supabase;
