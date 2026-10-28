@@ -136,8 +136,7 @@ export function LoginForm({ configured }: { configured: boolean }) {
           className="mt-1.5 text-xs leading-5 text-muted-foreground"
           id="auth-password-hint"
         >
-          Use 8–128 characters. Passwords are case-sensitive; Supabase may also
-          reject common or weak passwords.
+          New passwords must be 8–12 characters and include at least one number and one special character, such as ! or #.
         </p>
         {passwordError && (
           <p

@@ -30,7 +30,7 @@ function getAuthErrorMessage(error: AuthErrorDetails, intent: AuthIntent) {
     case "email_address_invalid":
       return "Supabase rejected this email address. Check it and try again.";
     case "weak_password":
-      return "This password does not meet the password strength requirements. Choose a longer, less common password.";
+      return "Supabase rejected this password. Choose another password that follows the requirements shown above.";
     case "email_exists":
     case "user_already_exists":
       return "An account may already exist for this email. Try signing in, or request another confirmation link below.";
