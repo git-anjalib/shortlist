@@ -1,9 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import {
-  ArrowRight,
   ArrowUpRight,
-  Check,
   FileText,
   Search,
   Settings,
@@ -12,6 +10,7 @@ import {
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ApplicationTracker } from "@/components/application-tracker";
+import { ResumeMatchAnalyzer } from "@/components/resume-match-analyzer";
 import type { JobApplication } from "@/lib/application-domain";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -142,45 +141,20 @@ async function AuthenticatedHomePage() {
                   Resume coach
                 </span>
                 <span className="rounded-full bg-secondary px-2.5 py-1 text-[0.65rem] font-medium text-secondary-foreground">
-                  PREVIEW
+                  BROWSER ONLY
                 </span>
               </div>
               <h2
                 id="resume-title"
                 className="mt-5 text-xl font-semibold tracking-tight"
               >
-                Tailor your resume to a role.
+                Compare your resume with a job description.
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Compare a resume with a job description and get focused,
-                editable suggestions before you apply.
+                See which distinctive terms from a role appear in your resume
+                text, then review the terms that weren’t found.
               </p>
-
-              <div className="mt-5 space-y-3 rounded-xl bg-muted/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  A focused review checks
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <Check aria-hidden="true" className="size-4 text-primary" />
-                  Skills and role alignment
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <Check aria-hidden="true" className="size-4 text-primary" />
-                  Clear, specific impact statements
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <Check aria-hidden="true" className="size-4 text-primary" />
-                  Suggestions you control
-                </p>
-              </div>
-
-              <a
-                href="#resume-review-steps"
-                className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                See how a review will work
-                <ArrowRight aria-hidden="true" className="size-4" />
-              </a>
+              <ResumeMatchAnalyzer />
             </section>
 
             <section
@@ -275,19 +249,19 @@ async function AuthenticatedHomePage() {
                 </span>
                 <div>
                   <h2 id="review-steps-title" className="font-semibold">
-                    A resume review, step by step
+                    A resume match, step by step
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Suggestions will stay tied to a specific role and remain
-                    under your control.
+                    Compare the wording, then review any role terms that are
+                    not present in the pasted resume text.
                   </p>
                 </div>
               </div>
               <ol className="mt-5 grid gap-3 sm:grid-cols-3">
                 {[
-                  "Choose a resume",
-                  "Add the job description",
-                  "Review suggested edits",
+                  "Paste your resume",
+                  "Paste the job description",
+                  "Review found and unlisted terms",
                 ].map((step, index) => (
                   <li key={step} className="flex items-start gap-2.5 text-sm">
                     <span className="grid size-6 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
@@ -301,8 +275,8 @@ async function AuthenticatedHomePage() {
           </div>
 
           <p className="pb-2 text-center text-xs text-muted-foreground">
-            Applications are saved to your account. Resume review and job
-            discovery are previews and are not connected yet.
+            Your pasted text is not saved. Applications are saved to your
+            account; external job discovery is not connected yet.
           </p>
         </div>
       </main>
