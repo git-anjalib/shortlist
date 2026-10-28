@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { connection } from "next/server";
 import {
   ArrowUpRight,
@@ -11,7 +12,6 @@ import {
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ApplicationTracker } from "@/components/application-tracker";
-import { ResumeMatchAnalyzer } from "@/components/resume-match-analyzer";
 import type { JobApplication } from "@/lib/application-domain";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -141,23 +141,36 @@ async function AuthenticatedHomePage() {
                   <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
                     <Sparkles aria-hidden="true" className="size-4" />
                   </span>
-                  Resume coach
+                  Resume library
                 </span>
                 <span className="rounded-full bg-secondary px-2.5 py-1 text-[0.65rem] font-medium text-secondary-foreground">
-                  BROWSER ONLY
+                  PRIVATE TO YOUR ACCOUNT
                 </span>
               </div>
               <h2
                 id="resume-title"
                 className="mt-5 text-xl font-semibold tracking-tight"
               >
-                Compare your resume with a job description.
+                Save separate versions for different roles.
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                See which distinctive terms from a role appear in your resume
-                text, then review the terms that weren’t found.
+                Give each pasted resume a title, then choose one version or all
+                of them when you compare against a job description.
               </p>
-              <ResumeMatchAnalyzer />
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Link
+                  href="/resumes"
+                  className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  Manage resumes
+                </Link>
+                <Link
+                  href="/resume-match"
+                  className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  Compare to a job description
+                </Link>
+              </div>
             </section>
 
             <section
@@ -252,19 +265,19 @@ async function AuthenticatedHomePage() {
                 </span>
                 <div>
                   <h2 id="review-steps-title" className="font-semibold">
-                    A resume match, step by step
+                    Compare saved resume versions
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Compare the wording, then review any role terms that are
-                    not present in the pasted resume text.
+                    Save multiple titled versions, paste a job description,
+                    then compare one resume or all saved versions.
                   </p>
                 </div>
               </div>
               <ol className="mt-5 grid gap-3 sm:grid-cols-3">
                 {[
-                  "Paste your resume",
-                  "Paste the job description",
-                  "Review found and unlisted terms",
+                  "Save a titled resume",
+                  "Paste a job description",
+                  "Compare one or all versions",
                 ].map((step, index) => (
                   <li key={step} className="flex items-start gap-2.5 text-sm">
                     <span className="grid size-6 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
@@ -278,8 +291,8 @@ async function AuthenticatedHomePage() {
           </div>
 
           <p className="pb-2 text-center text-xs text-muted-foreground">
-            Your pasted text is not saved. Applications are saved to your
-            account; external job discovery is not connected yet.
+            Saved resumes and applications are scoped to your account. Job
+            descriptions are not saved; external job discovery is not connected yet.
           </p>
         </div>
       </main>

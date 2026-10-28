@@ -1,6 +1,6 @@
 # Supabase setup for Shortlist
 
-Shortlist stores applications in Supabase Postgres. Supabase Auth provides the account session, and database row-level security scopes every application to its owner.
+Shortlist stores applications and pasted resume text in Supabase Postgres. Supabase Auth provides the account session, and database row-level security scopes each record to its owner. Resume files are not uploaded in this version.
 
 ## Create and configure a project
 
@@ -8,7 +8,8 @@ Shortlist stores applications in Supabase Postgres. Supabase Auth provides the a
 2. In **Project Settings → API**, copy the project URL and the **publishable key**.
 3. Copy `apps/web/.env.example` to `apps/web/.env.local` and replace the URL and key. Keep the publishable key in the `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` variable; do not put a secret or service-role key in the app.
 4. In the Supabase SQL Editor, run [`supabase/migrations/20261022000000_job_applications.sql`](supabase/migrations/20261022000000_job_applications.sql).
-5. In **Authentication → URL Configuration**, set the local Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to the redirect URLs. For a deployed app, add its HTTPS callback URL and set `NEXT_PUBLIC_SITE_URL` to that app's origin.
+5. Run [`supabase/migrations/20261028000000_saved_resumes.sql`](supabase/migrations/20261028000000_saved_resumes.sql) to create private, per-account saved resume records.
+6. In **Authentication → URL Configuration**, set the local Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to the redirect URLs. For a deployed app, add its HTTPS callback URL and set `NEXT_PUBLIC_SITE_URL` to that app's origin.
 
 ## Run locally
 
