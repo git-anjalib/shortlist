@@ -17,3 +17,16 @@ Shortlist stores applications and pasted resume text in Supabase Postgres. Supab
 From the repository root, run `pnpm --filter web dev` and open `http://localhost:3000`. Create an account with an email address you can access, confirm it if Supabase email confirmation is enabled, then sign in.
 
 If you used the earlier browser-storage tracker, sign in in the same browser. Shortlist will offer to import those saved applications. It removes the local copy only after the database import succeeds.
+
+## Optional AI resume analysis
+
+To enable the deeper resume-to-job-description analysis, add an OpenAI API key to `apps/web/.env.local`:
+
+```env
+OPENAI_API_KEY=your-api-key
+OPENAI_MODEL=gpt-6-luna
+```
+
+Keep `OPENAI_API_KEY` server-side; never add the `NEXT_PUBLIC_` prefix or commit your real key. Restart the development server after changing environment variables. Without this key, the private quick keyword check still works.
+
+The AI analysis is opt-in each time. After you confirm the notice and start the analysis, Shortlist sends the selected saved resume text and pasted job description to OpenAI's API. Shortlist does not save the job description or generated analysis in Supabase. OpenAI's API data handling policies apply, and API usage may be billed to the API account.

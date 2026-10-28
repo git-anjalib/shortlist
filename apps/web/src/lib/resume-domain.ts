@@ -22,3 +22,42 @@ export type ResumeComparison = {
     totalTerms: number;
   };
 };
+
+export type ResumeAiAnalysis = {
+  jobSnapshot: { roleTitle: string; seniority: string; summary: string };
+  priorityFactors: Array<{
+    factor: string;
+    category: string;
+    importance: "must_have" | "preferred" | "unclear";
+    reason: string;
+  }>;
+  versionComparisonSummary: string;
+  comparisons: Array<{
+    resumeId: string;
+    title: string;
+    fitLevel: "strong_alignment" | "partial_alignment" | "development_needed";
+    fitSummary: string;
+    requirements: Array<{
+      factor: string;
+      importance: "must_have" | "preferred" | "unclear";
+      status: "strong_evidence" | "partial_evidence" | "no_evidence";
+      evidenceQuote: string;
+      assessment: string;
+      nextStep: string;
+    }>;
+    tailoringSuggestions: Array<{
+      section: string;
+      suggestion: string;
+      supportingQuote: string;
+    }>;
+    learningPlan: Array<{
+      skill: string;
+      learningGoal: string;
+      searchQuery: string;
+      priority: "high" | "medium" | "low";
+      whyItHelps: string;
+    }>;
+  }>;
+  interviewPrep: Array<{ question: string; whyItMayComeUp: string }>;
+  caveat: string;
+};
