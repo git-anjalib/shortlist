@@ -50,6 +50,7 @@ async function AuthenticatedResumeMatchPage() {
   const { data: rows, error: resumesError } = await supabase
     .from("saved_resumes")
     .select("id, title, created_at, updated_at")
+    .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
   const resumes: SavedResumeSummary[] = (rows ?? []).map((row) => ({

@@ -14,6 +14,7 @@ export type Database = {
           applied_at: string | null;
           created_at: string;
           updated_at: string;
+          deleted_at: string | null;
         };
         Insert: {
           id?: string;
@@ -25,6 +26,7 @@ export type Database = {
           applied_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          deleted_at?: string | null;
         };
         Update: {
           company?: string;
@@ -33,6 +35,7 @@ export type Database = {
           job_url?: string | null;
           applied_at?: string | null;
           updated_at?: string;
+          deleted_at?: string | null;
         };
         Relationships: [];
       };
@@ -44,6 +47,7 @@ export type Database = {
           resume_text: string;
           created_at: string;
           updated_at: string;
+          deleted_at: string | null;
         };
         Insert: {
           id?: string;
@@ -52,11 +56,13 @@ export type Database = {
           resume_text: string;
           created_at?: string;
           updated_at?: string;
+          deleted_at?: string | null;
         };
         Update: {
           title?: string;
           resume_text?: string;
           updated_at?: string;
+          deleted_at?: string | null;
         };
         Relationships: [];
       };

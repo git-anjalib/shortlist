@@ -71,6 +71,7 @@ export async function compareSavedResumes(
   const resumeQuery = supabase
     .from("saved_resumes")
     .select("id, title, resume_text")
+    .is("deleted_at", null)
     .order("updated_at", { ascending: false });
   const { data, error } =
     resumeId === "all"

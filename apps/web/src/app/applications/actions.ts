@@ -130,6 +130,7 @@ export async function updateApplicationStage(
     .from("job_applications")
     .update({ stage })
     .eq("id", id)
+    .is("deleted_at", null)
     .select("id, user_id, company, role, stage, job_url, applied_at, created_at, updated_at")
     .maybeSingle();
 
@@ -141,11 +142,11 @@ export async function updateApplicationStage(
   return { ok: true, data: toApplication(data) };
 }
 
-export async function deleteApplication(
+export async function archiveApplication(
   id: string,
 ): Promise<ApplicationActionResult<string>> {
   if (!isUuid(id)) {
-    return { ok: false, error: "That application could not be removed." };
+    return { ok: false, error: "That application could not be archived." };
   }
 
   const supabase = await requireAuthenticatedClient();
@@ -155,19 +156,19 @@ export async function deleteApplication(
 
   const { data, error } = await supabase
     .from("job_applications")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
+    .is("deleted_at", null)
     .select("id")
     .maybeSingle();
 
   if (error || !data) {
-    return { ok: false, error: "Shortlist couldn't remove that application. Try again." };
+    return { ok: false, error: "Shortlist couldn't archive that application. Try again." };
   }
 
   revalidatePath("/");
   return { ok: true, data: data.id };
 }
-
 export async function importLegacyApplications(
   value: unknown,
 ): Promise<ApplicationActionResult<JobApplication[]>> {

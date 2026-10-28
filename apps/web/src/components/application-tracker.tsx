@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import {
   createApplication,
-  deleteApplication,
+  archiveApplication,
   importLegacyApplications,
   updateApplicationStage,
 } from "@/app/applications/actions";
@@ -195,15 +195,15 @@ export function ApplicationTracker({
     }
   }
 
-  async function handleRemove(application: JobApplication) {
+  async function handleArchive(application: JobApplication) {
     if (isWorking) {
       return;
     }
 
-    const shouldRemove = window.confirm(
-      `Remove ${application.role} at ${application.company}?`,
+    const shouldArchive = window.confirm(
+      `Archive ${application.role} at ${application.company}? It will be hidden from active applications but retained in your account.`,
     );
-    if (!shouldRemove) {
+    if (!shouldArchive) {
       return;
     }
 
@@ -212,7 +212,7 @@ export function ApplicationTracker({
     setIsWorking(true);
 
     try {
-      const result = await deleteApplication(application.id);
+      const result = await archiveApplication(application.id);
       if (!result.ok) {
         setActionError(result.error);
         return;
@@ -221,7 +221,7 @@ export function ApplicationTracker({
       setApplications((current) =>
         current.filter((item) => item.id !== result.data),
       );
-      setFeedback("Application removed from your account.");
+      setFeedback("Application archived. It remains in your account.");
     } catch {
       setActionError("Shortlist couldn't reach the database. Try again.");
     } finally {
@@ -624,13 +624,13 @@ export function ApplicationTracker({
                       type="button"
                       className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
                       aria-label={
-                        "Remove " + application.role + " at " + application.company
+                        "Archive " + application.role + " at " + application.company
                       }
-                      onClick={() => handleRemove(application)}
+                      onClick={() => handleArchive(application)}
                       disabled={isWorking}
                     >
                       <Trash2 aria-hidden="true" className="size-3.5" />
-                      Remove
+                      Archive
                     </button>
                   </div>
                 </li>

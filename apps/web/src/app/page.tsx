@@ -65,6 +65,7 @@ async function AuthenticatedHomePage() {
   const { data: rows, error: applicationsError } = await supabase
     .from("job_applications")
     .select("id, company, role, stage, job_url, applied_at, created_at, updated_at")
+    .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
   const initialApplications: JobApplication[] = (rows ?? []).map((row) => ({

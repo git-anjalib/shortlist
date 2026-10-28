@@ -115,11 +115,11 @@ export async function saveResume(
   return { ok: true, data: toResumeSummary(data) };
 }
 
-export async function deleteResume(
+export async function archiveResume(
   id: string,
 ): Promise<ResumeActionResult<string>> {
   if (!isUuid(id)) {
-    return { ok: false, error: "That saved resume could not be removed." };
+    return { ok: false, error: "That saved resume could not be archived." };
   }
 
   const supabase = await getAuthenticatedClient();
@@ -127,21 +127,22 @@ export async function deleteResume(
   if (!supabase) {
     return {
       ok: false,
-      error: "Your session expired. Sign in again to remove a resume.",
+      error: "Your session expired. Sign in again to archive a resume.",
     };
   }
 
   const { data, error } = await supabase
     .from("saved_resumes")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
+    .is("deleted_at", null)
     .select("id")
     .maybeSingle();
 
   if (error || !data) {
     return {
       ok: false,
-      error: "Shortlist couldn't remove that resume. Try again.",
+      error: "Shortlist couldn't archive that resume. Try again.",
     };
   }
 

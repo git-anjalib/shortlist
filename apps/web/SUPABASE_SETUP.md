@@ -1,6 +1,6 @@
 # Supabase setup for Shortlist
 
-Shortlist stores applications and pasted resume text in Supabase Postgres. Supabase Auth provides the account session, and database row-level security scopes each record to its owner. Resume files are not uploaded in this version.
+Shortlist stores applications and pasted resume text in Supabase Postgres. Supabase Auth provides the account session, and database row-level security scopes each record to its owner. The app archives records when you remove them; it does not hard-delete them. Resume files are not uploaded in this version.
 
 ## Create and configure a project
 
@@ -9,7 +9,8 @@ Shortlist stores applications and pasted resume text in Supabase Postgres. Supab
 3. Copy `apps/web/.env.example` to `apps/web/.env.local` and replace the URL and key. Keep the publishable key in the `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` variable; do not put a secret or service-role key in the app.
 4. In the Supabase SQL Editor, run [`supabase/migrations/20261022000000_job_applications.sql`](supabase/migrations/20261022000000_job_applications.sql).
 5. Run [`supabase/migrations/20261028000000_saved_resumes.sql`](supabase/migrations/20261028000000_saved_resumes.sql) to create private, per-account saved resume records.
-6. In **Authentication → URL Configuration**, set the local Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to the redirect URLs. For a deployed app, add its HTTPS callback URL and set `NEXT_PUBLIC_SITE_URL` to that app's origin.
+6. Run [`supabase/migrations/20261029000000_soft_delete_records.sql`](supabase/migrations/20261029000000_soft_delete_records.sql) to add archive behavior for applications and saved resumes.
+7. In **Authentication → URL Configuration**, set the local Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to the redirect URLs. For a deployed app, add its HTTPS callback URL and set `NEXT_PUBLIC_SITE_URL` to that app's origin.
 
 ## Run locally
 

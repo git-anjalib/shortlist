@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import {
-  deleteResume,
+  archiveResume,
   saveResume,
 } from "@/app/resumes/actions";
 import {
@@ -90,16 +90,16 @@ export function ResumeLibrary({
     }
   }
 
-  async function handleDelete(resume: SavedResumeSummary) {
+  async function handleArchive(resume: SavedResumeSummary) {
     if (isWorking) {
       return;
     }
 
-    const shouldDelete = window.confirm(
-      "Delete " + resume.title + "? Its saved resume text will be removed from your account.",
+    const shouldArchive = window.confirm(
+      "Archive " + resume.title + "? It will be hidden from active comparisons and retained in your account.",
     );
 
-    if (!shouldDelete) {
+    if (!shouldArchive) {
       return;
     }
 
@@ -108,7 +108,7 @@ export function ResumeLibrary({
     setIsWorking(true);
 
     try {
-      const result = await deleteResume(resume.id);
+      const result = await archiveResume(resume.id);
 
       if (!result.ok) {
         setActionError(result.error);
@@ -118,9 +118,9 @@ export function ResumeLibrary({
       setResumes((current) =>
         current.filter((item) => item.id !== result.data),
       );
-      setFeedback("Resume deleted from your account.");
+      setFeedback("Resume archived. Its text is retained in your account.");
     } catch {
-      setActionError("Shortlist couldn't delete that resume. Try again.");
+      setActionError("Shortlist couldn't archive that resume. Try again.");
     } finally {
       setIsWorking(false);
     }
@@ -273,10 +273,10 @@ export function ResumeLibrary({
                 <button
                   type="button"
                   className={secondaryButtonClassName}
-                  onClick={() => handleDelete(resume)}
+                  onClick={() => handleArchive(resume)}
                   disabled={isWorking}
                 >
-                  Delete
+                  Archive
                 </button>
               </li>
             ))}
