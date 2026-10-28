@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import {
   ArrowUpRight,
   FileText,
@@ -52,6 +53,8 @@ export default function HomePage() {
 }
 
 async function AuthenticatedHomePage() {
+  await connection();
+
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getClaims();
 
